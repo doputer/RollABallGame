@@ -8,6 +8,7 @@ public class ChangeScene : MonoBehaviour {
 	void Update()
 	{
 		if (Input.GetKeyDown (KeyCode.Escape)) {
+			Cursor.lockState = CursorLockMode.None;
 			SceneManager.LoadScene ("02-Menu");
 		} else if (Input.GetKeyDown (KeyCode.F5)) {
 			SceneManager.LoadScene (SceneManager.GetActiveScene().buildIndex);
@@ -16,6 +17,6 @@ public class ChangeScene : MonoBehaviour {
 	
 	public void StartGame()
 	{
-		SceneManager.LoadScene ("03-Stage1");
+		SceneManager.LoadScene (SceneManager.GetActiveScene().buildIndex+1);
 	}
 }

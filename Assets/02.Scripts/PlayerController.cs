@@ -11,50 +11,63 @@ public class PlayerController : MonoBehaviour {
 	public Rigidbody rb;
 
 	// 움직임 관련 변수 선언
+	private float moveHorizontal;
+	private float moveVertical;
 	private bool isJumping;
-	private float posY;
-	private float gravity;
 	private float jumpPower;
-	private float jumpTime;
+	private int jumpCount;
 
 	// 점수 관련 변수 선언
 	private int count;
+	public int pickupCount;
+	private GameObject[] pickupArray;
 
 	public Text countText;
 	public Text winText;
 
+	// 스테이지 클리어 관련 변수 선언
+	public GameObject clearStage;
+
 	void Start()
 	{
-		speed = 10.0f;
+		speed = 13.0f;
 
+		// 오브젝트 관련
 		count = 0;
-		SetCountText ();
 		winText.text = "";
+
+		pickupArray = GameObject.FindGameObjectsWithTag ("PickUp");
+		pickupCount = pickupArray.Length;
+
+		SetCountText ();
 
 		// gravity와 jumpPower을 조작하여 점프력 조작
 		isJumping = false;
-		posY = transform.position.y;
-		gravity = 9.8f;
-		jumpPower = 5.0f;
-		jumpTime = 0.0f;
+		jumpPower = 5.5f;
+
+		jumpCount = 0;
+
+		// 게임 시작 시 마우스 설정
+		Cursor.lockState = CursorLockMode.Locked;
+ 	}
+
+	void Update()
+	{
+		moveHorizontal = Input.GetAxis ("Horizontal");
+		moveVertical = Input.GetAxis ("Vertical");
+		if (Input.GetKeyDown (KeyCode.Space) && jumpCount == 0) {
+			isJumping = true;
+		}
+
+		if (rb.position.y < -10) {
+			SceneManager.LoadScene (SceneManager.GetActiveScene().buildIndex);
+		}
 	}
 
 	void FixedUpdate()
 	{
-		float moveHorizontal = Input.GetAxis ("Horizontal");
-		float moveVertical = Input.GetAxis ("Vertical");
-
-		Vector3 movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
-
-		rb.AddForce (movement * speed);
-
-		if (Input.GetKeyDown (KeyCode.Space) && !isJumping) {
-			isJumping = true;
-			posY = transform.position.y;
-		}
-		if (isJumping) {
-			Jump ();
-		}
+		Run ();
+		Jump ();
 	}
 
 	void OnTriggerEnter(Collider other)
@@ -64,26 +77,39 @@ public class PlayerController : MonoBehaviour {
 			count++;
 			SetCountText ();
 		}
+		if (other.gameObject.CompareTag ("Flag")) {
+			SceneManager.LoadScene (SceneManager.GetActiveScene().buildIndex+1);
+		}
+	}
+
+	void OnCollisionEnter(Collision collision)
+	{
+		if (collision.gameObject.CompareTag ("Terrain")) {
+			jumpCount = 0;
+		}
 	}
 
 	void SetCountText ()
 	{
-		countText.text = "Count: " + count.ToString ();
-		if (count >= 12) {
+		countText.text = "Count: " + count.ToString () + " / " + pickupCount;
+		if (count >= pickupCount) {
 			winText.text = "You Win!";
+			clearStage.SetActive (true);
 		}
+	}
+
+	void Run()
+	{
+		Vector3 movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
+		rb.AddForce (movement * speed, ForceMode.Force);
 	}
 
 	void Jump()
 	{
-		float height = jumpTime * jumpTime * (-gravity / 2) + (jumpTime * jumpPower);
-		transform.position = new Vector3 (transform.position.x, posY + height, transform.position.z);
-		jumpTime += Time.deltaTime;
-
-		if (height < 0.0f) {
-			isJumping = false;
-			jumpTime = 0.0f;
-			transform.position = new Vector3 (transform.position.x, posY, transform.position.z);
-		}
+		if(!isJumping)
+			return;
+		rb.AddForce (Vector3.up * jumpPower, ForceMode.Impulse);
+		isJumping = false;
+		jumpCount = 1;
 	}
 }
